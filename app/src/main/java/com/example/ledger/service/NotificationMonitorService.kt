@@ -46,7 +46,6 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         db = AppDatabase.getDatabase(applicationContext)
-        startForegroundService()
         Log.d("NotificationMonitor", "通知监听服务已连接")
     }
 
@@ -190,7 +189,6 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
-        stopForeground(STOP_FOREGROUND_REMOVE)
         scope.cancel()
     }
 

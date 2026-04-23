@@ -59,7 +59,6 @@ class AccessibilityMonitorService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         db = AppDatabase.getDatabase(applicationContext)
-        startForegroundService()
         Log.d("AccessibilityMonitor", "无障碍服务已连接")
     }
 
@@ -199,7 +198,6 @@ class AccessibilityMonitorService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        stopForeground(STOP_FOREGROUND_REMOVE)
         scope.cancel()
     }
 }
