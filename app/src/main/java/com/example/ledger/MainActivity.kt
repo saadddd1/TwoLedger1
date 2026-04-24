@@ -23,6 +23,9 @@ import com.example.ledger.ui.IosTextPrimary
 import com.example.ledger.ui.IosTextSecondary
 import com.example.ledger.viewmodel.ItemViewModelFactory
 import kotlinx.coroutines.delay
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 class MainActivity : ComponentActivity() {
     private val viewModelFactory by lazy {
@@ -63,22 +66,22 @@ class MainActivity : ComponentActivity() {
                     if (showSplash) {
                         SplashScreen()
                     } else {
-                        val navController = androidx.navigation.compose.rememberNavController()
-                        androidx.navigation.compose.NavHost(navController = navController, startDestination = "main") {
-                            androidx.navigation.compose.composable("main") {
+                        val navController = rememberNavController()
+                        NavHost(navController = navController, startDestination = "main") {
+                            composable("main") {
                                 MainScreen(
                                     viewModelFactory = viewModelFactory,
                                     onNavigateToLogin = { navController.navigate("login") },
                                     onNavigateToVip = { navController.navigate("vip") }
                                 )
                             }
-                            androidx.navigation.compose.composable("login") {
+                            composable("login") {
                                 com.example.ledger.ui.LoginScreen(
                                     onNavigateBack = { navController.popBackStack() },
                                     onNavigateToVip = { navController.navigate("vip") }
                                 )
                             }
-                            androidx.navigation.compose.composable("vip") {
+                            composable("vip") {
                                 com.example.ledger.ui.VipScreen(
                                     onNavigateBack = { navController.popBackStack() }
                                 )
