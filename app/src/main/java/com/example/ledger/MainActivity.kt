@@ -63,11 +63,32 @@ class MainActivity : ComponentActivity() {
                     if (showSplash) {
                         SplashScreen()
                     } else {
-                        MainScreen(viewModelFactory = viewModelFactory)
+                        val navController = androidx.navigation.compose.rememberNavController()
+                        androidx.navigation.compose.NavHost(navController = navController, startDestination = "main") {
+                            androidx.navigation.compose.composable("main") {
+                                MainScreen(
+                                    viewModelFactory = viewModelFactory,
+                                    onNavigateToLogin = { navController.navigate("login") },
+                                    onNavigateToVip = { navController.navigate("vip") }
+                                )
+                            }
+                            androidx.navigation.compose.composable("login") {
+                                com.example.ledger.ui.LoginScreen(
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToVip = { navController.navigate("vip") }
+                                )
+                            }
+                            androidx.navigation.compose.composable("vip") {
+                                com.example.ledger.ui.VipScreen(
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+
     }
 
     override fun onDestroy() {

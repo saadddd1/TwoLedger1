@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -95,7 +96,11 @@ fun isAccessibilityServiceEnabled(context: Context): Boolean {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun MainScreen(viewModelFactory: ItemViewModelFactory) {
+fun MainScreen(
+    viewModelFactory: ItemViewModelFactory,
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToVip: () -> Unit = {}
+) {
     val viewModel: ItemViewModel = viewModel(factory = viewModelFactory)
     val items by viewModel.items.collectAsState()
     val pendingBills by viewModel.pendingBills.collectAsState()
@@ -144,6 +149,19 @@ fun MainScreen(viewModelFactory: ItemViewModelFactory) {
                             fontSize = 17.sp,
                             color = IosTextPrimary
                         ) 
+                    },
+                    navigationIcon = {
+                        val isLoggedIn by com.example.ledger.data.AuthSession.isLoggedIn.collectAsState()
+                        IconButton(onClick = { 
+                            if (isLoggedIn) onNavigateToVip() else onNavigateToLogin() 
+                        }) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Outlined.Person,
+                                contentDescription = "账户",
+                                tint = if (isLoggedIn) Color(0xFFD4AF37) else IosBlue,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = IosBg
