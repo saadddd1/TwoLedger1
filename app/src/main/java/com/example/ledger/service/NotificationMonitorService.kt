@@ -49,36 +49,6 @@ class NotificationMonitorService : NotificationListenerService() {
         Log.d("NotificationMonitor", "通知监听服务已连接")
     }
 
-    private fun startForegroundService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "自动记账服务",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "自动记账后台运行服务"
-                enableVibration(false)
-                setSound(null, null)
-            }
-
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        val notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("账本自动记账")
-            .setContentText("正在后台监听支付通知")
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
-            .setOngoing(true)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(FOREGROUND_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            startForeground(FOREGROUND_ID, notification)
-        }
-    }
-
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
         if (sbn == null) return
@@ -189,7 +159,13 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
+        Log.d("NotificationMonitor", "通知监听服务已断开")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
         scope.cancel()
+        Log.d("NotificationMonitor", "通知监听服务已销毁")
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {}

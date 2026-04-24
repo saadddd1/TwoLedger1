@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        AppDatabase.getDatabase(this).close()
+        // Do not close the singleton database here, it causes crashes on configuration changes
     }
 }
 

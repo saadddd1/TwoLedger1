@@ -62,36 +62,6 @@ class AccessibilityMonitorService : AccessibilityService() {
         Log.d("AccessibilityMonitor", "无障碍服务已连接")
     }
 
-    private fun startForegroundService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "无障碍记账服务",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "无障碍自动记账后台服务"
-                enableVibration(false)
-                setSound(null, null)
-            }
-
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        val notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("账本无障碍服务")
-            .setContentText("正在后台监控支付页面")
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
-            .setOngoing(true)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(FOREGROUND_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(FOREGROUND_ID, notification)
-        }
-    }
-
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
@@ -198,6 +168,12 @@ class AccessibilityMonitorService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
+        // Accessibility feedback interrupted. Do nothing.
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
         scope.cancel()
+        Log.d("AccessibilityMonitor", "无障碍服务已销毁")
     }
 }
