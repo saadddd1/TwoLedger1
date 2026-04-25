@@ -25,21 +25,23 @@ class NotificationMonitorService : NotificationListenerService() {
         private const val CHANNEL_ID = "ledger_monitor_service"
         private const val FOREGROUND_ID = 1001
 
-        // 2026年最新支付关键词 适配微信8.5.x 支付宝10.6.x
+        // 最新支付关键词适配
         private val SUCCESS_KEYWORDS = listOf(
-            "微信支付付款", "已支付", "支付成功", "完成付款", "付款金额",
+            "支付付款", "已支付", "支付成功", "完成付款", "付款金额",
             "付款成功", "交易成功", "消费成功", "转账成功", "扫码付款",
             "支付完成", "付款完成", "支付款项", "支出通知", "交易人民币",
-            "微信支付收款", "支付凭证", "转账给", "已收钱", "收款到账通知",
-            "付款成功。", "支付成功！", "完成付款", "已完成支付"
+            "微信支付", "支付凭证", "转账给", "已收钱", "收款到账",
+            "订单支付", "实付款"
         )
 
-        // 2026年最新金额匹配规则
+        // 最新金额匹配规则
         private val PATTERNS = listOf(
-            Regex("""(?:¥|￥|人民币|-|支付成功|付款成功)(\d+(?:\.\d{1,2})?)"""),
-            Regex("""(?:支出|消费|支付|交易|付款)(\d+(?:\.\d{1,2})?)[元]?"""),
-            Regex("""(?:金额|付款|收款方)(?:[：:]?)(\d+(?:\.\d{1,2})?)"""),
-            Regex("""(\d+\.\d{2})元""")
+            Regex("""(?:¥|￥|人民币|-|支付成功|付款成功|消费)\s*([0-9,]+\.\d{2})"""),
+            Regex("""(?:支出|消费|支付|交易|付款金额|实付款)\s*([0-9,]+\.\d{2})\s*[元]?"""),
+            Regex("""(?:金额|付款|付款给)(?:[：:]?)\s*([0-9,]+\.\d{2})"""),
+            Regex("""([0-9,]+\.\d{2})\s*元"""),
+            // 保底提取
+            Regex("""(?<!\d-|-)(?<=\s|^)([0-9,]+\.\d{2})(?=\s|$)""")
         )
     }
 
@@ -93,7 +95,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 for (pattern in PATTERNS) {
                     val match = pattern.find(combinedContent)
                     if (match != null) {
-                        amount = match.groupValues[1].toDoubleOrNull()
+                        amount = match.groupValues[1].replace(",", "").toDoubleOrNull()
                         if (amount != null && amount > 0) break
                     }
                 }

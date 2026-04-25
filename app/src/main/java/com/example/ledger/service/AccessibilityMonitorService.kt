@@ -36,23 +36,26 @@ class AccessibilityMonitorService : AccessibilityService() {
             "com.taobao.taobao"
         )
 
-        // 2026年微信8.5.x/支付宝10.6.x 最新匹配规则
+        // 2026最新微信/支付宝匹配规则
         private val PAY_SUCCESS_KEYWORDS = listOf(
             "支付成功", "付款成功", "完成支付", "交易成功",
             "已付款", "支付完成", "付款完成", "转账成功",
-            "付款成功。", "支付成功！", "完成付款", "支付成功 ",
-            "微信支付", "已支付", "支付凭证", "转账给你",
-            "收钱到账", "收款到账", "付款给", "向你付款"
+            "微信支付凭证", "支付宝账单", "账单详情", "支付结果",
+            "付款给", "收款方", "交易详情", "订单详情", "交易金额", "付款金额"
         )
 
-        // 2026最新金额规则 - 适配微信支付宝最新UI格式
-        private val AMOUNT_PATTERN = Pattern.compile("""[¥￥]\s*(\d+(?:\.\d{1,2})?)""")
+        private val AMOUNT_PATTERNS = listOf(
+            Regex("""[¥￥-]\s*(\d+(?:\.\d{1,2})?)"""),
+            Regex("""(?:付款金额|支付金额|交易金额|实付款|总价)[:：]?\s*[¥￥]?\s*(\d+(?:\.\d{1,2})?)"""),
+            Regex("""(\d+(?:\.\d{1,2})?)\s*元"""),
+            // 保底提取符合 0.00 格式的浮点数，避开日期格式如 2026-04-25
+            Regex("""(?<!\d-|-)(?<=\s|^)(\d+\.\d{2})(?=\s|$)""")
+        )
+
         private val MERCHANT_PATTERNS = listOf(
-            Regex("""收款方[:：]?\s*(.+?)(?:\s|$)"""),
-            Regex("""付款给[:：]?\s*(.+?)(?:\s|$)"""),
-            Regex("""收款方：\s*([^\n]+)"""),
+            Regex("""(?:收款方|商户全称|交易对象|付款给|商户名称)[:：]?\s*(.+?)(?:\s|$)"""),
             Regex("""在(.+?)消费"""),
-            Regex("""商户全称[:：]?\s*(.+?)(?:\s|$)""")
+            Regex("""(.+?)(?:-.*?商品|的微店|的小店)""")
         )
     }
 
@@ -92,12 +95,16 @@ class AccessibilityMonitorService : AccessibilityService() {
 
         // 提取金额
         var amount: Double? = null
-        val matcher = AMOUNT_PATTERN.matcher(pageContent)
-        while (matcher.find()) {
-            val value = matcher.group(1)?.toDoubleOrNull()
-            if (value != null && value > 0) {
-                amount = value
-                break
+        for (pattern in AMOUNT_PATTERNS) {
+            val match = pattern.find(pageContent)
+            if (match != null) {
+                // 尝试提取捕获组 1 中的数字
+                val valueStr = match.groups[1]?.value ?: match.value
+                val value = valueStr.trim().replace(Regex("[^0-9.]"), "").toDoubleOrNull()
+                if (value != null && value > 0) {
+                    amount = value
+                    break
+                }
             }
         }
 
