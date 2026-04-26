@@ -709,44 +709,45 @@ fun OverviewContent(items: List<Item>, allBills: List<AutoBill>, modifier: Modif
         val totalSpent = items.sumOf { it.price }
         val totalRecovered = items.filter { it.isSold }.sumOf { it.residualValue }
         val netSpend = max(totalSpent - totalRecovered, 0.0)
-        
+
         val activeItems = items.count { !it.isSold }
         val soldItems = items.count { it.isSold }
+        val billCount = allBills.size
 
         var totalDailyCost = 0.0
+        var worstItemName: String? = null
+        var worstDailyCost = 0.0
         items.forEach { item ->
             val endDate = if (item.isSold) item.soldDateMillis ?: nowMillis else nowMillis
             val diffMillis = max(endDate - item.purchaseDateMillis, 0)
             var daysPassed = TimeUnit.MILLISECONDS.toDays(diffMillis)
             if (daysPassed < 1L) daysPassed = 1L
             val netCost = if (item.isSold) max(item.price - item.residualValue, 0.0) else item.price
-            totalDailyCost += (netCost / daysPassed)
+            val dailyCost = netCost / daysPassed
+            totalDailyCost += dailyCost
+            if (!item.isSold && dailyCost > worstDailyCost) {
+                worstDailyCost = dailyCost
+                worstItemName = item.name
+            }
         }
 
-        // 账单统计：按区间总和映射表
-        val dailySums = mutableMapOf<String, Double>()
+        // 当月折旧估算
+        val daysInMonth = Calendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH)
+        val monthDepreciation = totalDailyCost * daysInMonth
+
+        // 月度/年度账单汇总
         val monthlySums = mutableMapOf<String, Double>()
         val yearlySums = mutableMapOf<String, Double>()
-        
         allBills.forEach { bill ->
             val date = Date(bill.timestampMillis)
-            dailySums[dailyFormat.format(date)] = (dailySums[dailyFormat.format(date)] ?: 0.0) + bill.amount
             monthlySums[monthFormat.format(date)] = (monthlySums[monthFormat.format(date)] ?: 0.0) + bill.amount
             yearlySums[yearFormat.format(date)] = (yearlySums[yearFormat.format(date)] ?: 0.0) + bill.amount
         }
 
-        val recentDays = mutableListOf<Pair<String, Double>>()
-        val todayKey = dailyFormat.format(nowMillis)
-        recentDays.add(Pair("今天又败了多少", dailySums[todayKey] ?: 0.0))
-        dailySums.keys.filter { it != todayKey }.sortedDescending().forEach { key ->
-            val date = dailyFormat.parse(key)
-            val label = date?.let { dayLabelFormat.format(it) } ?: key
-            recentDays.add(Pair(label, dailySums[key] ?: 0.0))
-        }
-
         val recentMonths = mutableListOf<Pair<String, Double>>()
         val thisMonthKey = monthFormat.format(nowMillis)
-        recentMonths.add(Pair("这个月已经烧了", monthlySums[thisMonthKey] ?: 0.0))
+        val thisMonthSpending = monthlySums[thisMonthKey] ?: 0.0
+        recentMonths.add(Pair("这个月已经烧了", thisMonthSpending))
         monthlySums.keys.filter { it != thisMonthKey }.sortedDescending().forEach { key ->
             val date = monthFormat.parse(key)
             val label = date?.let { monthLabelFormat.format(it) } ?: key
@@ -755,66 +756,93 @@ fun OverviewContent(items: List<Item>, allBills: List<AutoBill>, modifier: Modif
 
         val recentYears = mutableListOf<Pair<String, Double>>()
         val thisYearKey = yearFormat.format(nowMillis)
-        recentYears.add(Pair("今年累计败掉", yearlySums[thisYearKey] ?: 0.0))
+        val thisYearSpending = yearlySums[thisYearKey] ?: 0.0
+        recentYears.add(Pair("今年累计败掉", thisYearSpending))
         yearlySums.keys.filter { it != thisYearKey }.sortedDescending().forEach { key ->
             recentYears.add(Pair("${key}年", yearlySums[key] ?: 0.0))
         }
 
-        Triple(
-            Triple(totalSpent, totalRecovered, netSpend),
-            Triple(activeItems, soldItems, totalDailyCost),
-            Triple(recentDays, recentMonths, recentYears)
+        listOf(
+            totalSpent, totalRecovered, netSpend, totalDailyCost,
+            worstItemName, worstDailyCost, monthDepreciation,
+            activeItems, soldItems, billCount,
+            thisMonthSpending, thisYearSpending,
+            recentMonths, recentYears
         )
     }
 
-    val (totals, counts, history) = statistics
-    val (totalSpent, totalRecovered, netSpend) = totals
-    val (activeItems, soldItems, totalDailyCost) = counts
-    val (recentDays, recentMonths, recentYears) = history
+    val totalSpent = statistics[0] as Double
+    val totalRecovered = statistics[1] as Double
+    val netSpend = statistics[2] as Double
+    val totalDailyCost = statistics[3] as Double
+    val worstItemName = statistics[4] as String?
+    val worstDailyCost = statistics[5] as Double
+    val monthDepreciation = statistics[6] as Double
+    val activeItems = statistics[7] as Int
+    val soldItems = statistics[8] as Int
+    val billCount = statistics[9] as Int
+    val thisMonthSpending = statistics[10] as Double
+    val thisYearSpending = statistics[11] as Double
+    @Suppress("UNCHECKED_CAST")
+    val recentMonths = statistics[12] as List<Pair<String, Double>>
+    @Suppress("UNCHECKED_CAST")
+    val recentYears = statistics[13] as List<Pair<String, Double>>
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Card 1: 家当总账 + 最烧钱的家当
         item {
             StandardOverviewCard("家当总账") {
                 OverviewRow("这些年败掉的总数", "¥${String.format("%.2f", totalSpent)}", IosTextPrimary, 18.sp)
-                Spacer(modifier = Modifier.height(16.dp))
-                OverviewRow("在咸鱼上回的血", "¥${String.format("%.2f", totalRecovered)}", IosBlue, 18.sp)
+                if (totalRecovered > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OverviewRow("在咸鱼上回的血", "¥${String.format("%.2f", totalRecovered)}", IosBlue, 16.sp)
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider(color = IosDivider, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
                 OverviewRow("真正烧掉的钱", "¥${String.format("%.2f", netSpend)}", IosRed, 26.sp, true)
                 Spacer(modifier = Modifier.height(16.dp))
                 OverviewRow("每天一睁眼就亏掉", "¥${String.format("%.2f", totalDailyCost)}", IosTextPrimary, 16.sp)
+                if (worstItemName != null && worstDailyCost > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "最烧钱的家当",
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 14.sp,
+                            color = IosTextSecondary
+                        )
+                        Text(
+                            "$worstItemName 每天 ¥${String.format("%.2f", worstDailyCost)}",
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = IosRed.copy(alpha = 0.8f)
+                        )
+                    }
+                }
             }
         }
 
-        item {
-            StandardOverviewCard("家当现状") {
-                OverviewRow("还在吃灰的", "$activeItems 件", IosTextPrimary, 18.sp)
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = IosDivider, thickness = 0.5.dp)
-                Spacer(modifier = Modifier.height(16.dp))
-                OverviewRow("成功脱手的", "$soldItems 件", IosBlue, 18.sp)
-            }
-        }
-
+        // Card 2: 花钱明细
         item {
             StandardOverviewCard("花钱流水") {
-                ExpandableOverviewRow(
-                    historyData = recentDays,
-                    valueColor = IosTextPrimary, 
-                    fontSize = 18.sp
-                )
+                OverviewRow("自动抓取账单", "$billCount 笔", IosTextPrimary, 18.sp)
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider(color = IosDivider, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
                 ExpandableOverviewRow(
                     historyData = recentMonths,
-                    valueColor = IosRed, 
-                    fontSize = 26.sp, 
+                    valueColor = IosRed,
+                    fontSize = 26.sp,
                     isBold = true
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -822,11 +850,26 @@ fun OverviewContent(items: List<Item>, allBills: List<AutoBill>, modifier: Modif
                 Spacer(modifier = Modifier.height(16.dp))
                 ExpandableOverviewRow(
                     historyData = recentYears,
-                    valueColor = IosTextPrimary, 
+                    valueColor = IosTextPrimary,
                     fontSize = 18.sp
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp)) // 底部留白
+        }
+
+        // Card 3: 家当现状 + 月度折旧
+        item {
+            StandardOverviewCard("家当现状") {
+                OverviewRow("还在吃灰的", "$activeItems 件", IosTextPrimary, 18.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                OverviewRow("成功脱手的", "$soldItems 件", IosBlue, 16.sp)
+                if (activeItems > 0) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Divider(color = IosDivider, thickness = 0.5.dp)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OverviewRow("本月预计折旧", "¥${String.format("%.2f", monthDepreciation)}", IosRed.copy(alpha = 0.8f), 18.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
