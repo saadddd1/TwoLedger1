@@ -110,6 +110,7 @@ fun MainScreen(
     var itemToSell by remember { mutableStateOf<Item?>(null) }
     var itemToEdit by remember { mutableStateOf<Item?>(null) }
     var billToConvert by remember { mutableStateOf<AutoBill?>(null) }
+    var billToEdit by remember { mutableStateOf<AutoBill?>(null) }
     
     val pagerState = rememberPagerState(pageCount = { 3 })
     val coroutineScope = rememberCoroutineScope()
@@ -219,6 +220,7 @@ fun MainScreen(
                         pendingBills = pendingBills,
                         onDismiss = { viewModel.dismissAutoBill(it) },
                         onConvert = { billToConvert = it },
+                        onEdit = { billToEdit = it },
                         context = context
                      )
                 2 -> OverviewContent(items = items, allBills = allBills)
@@ -267,6 +269,17 @@ fun MainScreen(
                 }
             )
         }
+
+        if (billToEdit != null) {
+            EditBillDialog(
+                bill = billToEdit!!,
+                onDismiss = { billToEdit = null },
+                onEdit = { merchantName, amount, timestamp ->
+                    viewModel.updateBillDetails(billToEdit!!, merchantName, amount, timestamp)
+                    billToEdit = null
+                }
+            )
+        }
     }
 }
 
@@ -275,6 +288,7 @@ fun AutoRecordContent(
     pendingBills: List<AutoBill>,
     onDismiss: (AutoBill) -> Unit,
     onConvert: (AutoBill) -> Unit,
+    onEdit: (AutoBill) -> Unit,
     context: Context,
     modifier: Modifier = Modifier
 ) {
@@ -407,7 +421,7 @@ fun AutoRecordContent(
             ) {
                 items(pendingBills, key = { it.id }) { bill ->
                     Box(modifier = Modifier.animateItemPlacement(tween(250))) {
-                        AutoBillCard(bill, onDismiss = { onDismiss(bill) }, onConvert = { onConvert(bill) })
+                        AutoBillCard(bill, onDismiss = { onDismiss(bill) }, onConvert = { onConvert(bill) }, onEdit = { onEdit(bill) })
                     }
                 }
             }
@@ -416,7 +430,7 @@ fun AutoRecordContent(
 }
 
 @Composable
-fun AutoBillCard(bill: AutoBill, onDismiss: () -> Unit, onConvert: () -> Unit) {
+fun AutoBillCard(bill: AutoBill, onDismiss: () -> Unit, onConvert: () -> Unit, onEdit: () -> Unit) {
     val dateStr = dateFormatMDHM.format(Date(bill.timestampMillis))
     
     Card(
@@ -470,6 +484,11 @@ fun AutoBillCard(bill: AutoBill, onDismiss: () -> Unit, onConvert: () -> Unit) {
                             Divider(color = IosDivider, thickness = 0.5.dp)
                         }
                         
+                        DropdownMenuItem(
+                            text = { Text("编辑账单", fontFamily = FontFamily.SansSerif, color = IosBlue) },
+                            onClick = { expanded = false; onEdit() },
+                            leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = "编辑", tint = IosBlue) }
+                        )
                         DropdownMenuItem(
                             text = { Text("忽略此流水", fontFamily = FontFamily.SansSerif, color = IosRed) },
                             onClick = { expanded = false; onDismiss() },
@@ -564,6 +583,77 @@ fun ConvertBillDialog(bill: AutoBill, onDismiss: () -> Unit, onConvert: (String,
                 }
             ) {
                 Text("确定添加", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消", color = IosBlue, fontFamily = FontFamily.SansSerif) }
+        }
+    )
+}
+
+@Composable
+fun EditBillDialog(bill: AutoBill, onDismiss: () -> Unit, onEdit: (String, Double, Long) -> Unit) {
+    var merchantName by remember(bill) { mutableStateOf(bill.merchantName) }
+    var amountStr by remember(bill) { mutableStateOf(bill.amount.toString()) }
+    var dateStr by remember(bill) { mutableStateOf(dateFormatMDHM.format(Date(bill.timestampMillis))) }
+    var isError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = IosBg,
+        shape = RoundedCornerShape(14.dp),
+        title = {
+            Text(
+                "编辑账单信息",
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.SemiBold,
+                color = IosTextPrimary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Column {
+                Text("来源: ${bill.appSource}", color = IosTextSecondary, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
+                OutlinedTextField(
+                    value = merchantName,
+                    onValueChange = { merchantName = it },
+                    label = { Text("商户名称", fontFamily = FontFamily.SansSerif) },
+                    singleLine = true,
+                    isError = isError && merchantName.isBlank(),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                )
+                OutlinedTextField(
+                    value = amountStr,
+                    onValueChange = { amountStr = it },
+                    label = { Text("金额 (¥)", fontFamily = FontFamily.SansSerif) },
+                    singleLine = true,
+                    isError = isError && (amountStr.toDoubleOrNull() ?: 0.0) <= 0,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                )
+                OutlinedTextField(
+                    value = dateStr,
+                    onValueChange = { dateStr = it },
+                    label = { Text("时间 (MM-dd HH:mm)", fontFamily = FontFamily.SansSerif) },
+                    singleLine = true,
+                    isError = isError && runCatching { dateFormatMDHM.parse(dateStr) }.isFailure,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val amount = amountStr.toDoubleOrNull() ?: 0.0
+                    val dateMillis = try { dateFormatMDHM.parse(dateStr)?.time ?: 0L } catch (e: Exception) { 0L }
+                    if (merchantName.isNotBlank() && amount > 0 && dateMillis > 0) {
+                        onEdit(merchantName, amount, dateMillis)
+                    } else {
+                        isError = true
+                    }
+                }
+            ) {
+                Text("保存", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif)
             }
         },
         dismissButton = {

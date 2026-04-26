@@ -33,7 +33,15 @@ class AccessibilityMonitorService : AccessibilityService() {
             "com.unionpay",
             "com.jingdong.app.mall",
             "com.sankuai.meituan",
-            "com.taobao.taobao"
+            "com.taobao.taobao",
+            "com.xunmeng.pinduoduo",
+            "com.ss.android.ugc.aweme",
+            "me.ele",
+            "com.sdu.did.psnger",
+            "cmb.pb",
+            "com.icbc",
+            "com.chinamworld.boc",
+            "com.android.bankabc"
         )
 
         // 2026最新微信/支付宝匹配规则
@@ -41,13 +49,23 @@ class AccessibilityMonitorService : AccessibilityService() {
             "支付成功", "付款成功", "完成支付", "交易成功",
             "已付款", "支付完成", "付款完成", "转账成功",
             "微信支付凭证", "支付宝账单", "账单详情", "支付结果",
-            "付款给", "收款方", "交易详情", "订单详情", "交易金额", "付款金额"
+            "付款给", "收款方", "交易详情", "订单详情", "交易金额", "付款金额",
+            // 微信红包/转账
+            "红包已发送", "已领取", "红包记录", "已转账",
+            "转账给", "对方已收钱", "已被领取", "发出红包",
+            // 银行类支付
+            "消费支出", "支出提醒", "交易提醒", "消费提醒",
+            "快捷支付", "银联支付", "网上银行", "卡号尾号",
+            "支出人民币", "消费人民币"
         )
 
         private val AMOUNT_PATTERNS = listOf(
             Regex("""[¥￥-]\s*(\d+(?:\.\d{1,2})?)"""),
-            Regex("""(?:付款金额|支付金额|交易金额|实付款|总价)[:：]?\s*[¥￥]?\s*(\d+(?:\.\d{1,2})?)"""),
+            Regex("""(?:付款金额|支付金额|交易金额|实付款|总价|红包金额|转账金额)[:：]?\s*[¥￥]?\s*(\d+(?:\.\d{1,2})?)"""),
+            Regex("""(?:支出人民币|消费人民币|支出|消费|支付|付款)\s*[¥￥]?\s*(\d+(?:\.\d{1,2})?)\s*元"""),
             Regex("""(\d+(?:\.\d{1,2})?)\s*元"""),
+            // 银行短信: 尾号1234...支出500.00元
+            Regex("""尾号\d{4}.*?(\d+(?:\.\d{1,2})?)\s*元"""),
             // 保底提取符合 0.00 格式的浮点数，避开日期格式如 2026-04-25
             Regex("""(?<!\d-|-)(?<=\s|^)(\d+\.\d{2})(?=\s|$)""")
         )
@@ -69,7 +87,8 @@ class AccessibilityMonitorService : AccessibilityService() {
         if (event == null) return
 
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            event.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
+            event.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED &&
+            event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             return
         }
 
@@ -114,7 +133,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         val merchantName = extractMerchantName(pageContent, packageName)
 
         // 去重
-        if (!BillDeduplicator.shouldRecordBill(amount, packageName, System.currentTimeMillis())) {
+        if (!BillDeduplicator.shouldRecordBill(amount, packageName, merchantName, System.currentTimeMillis())) {
             return
         }
 
@@ -126,6 +145,14 @@ class AccessibilityMonitorService : AccessibilityService() {
                 "com.jingdong.app.mall" -> "京东"
                 "com.sankuai.meituan" -> "美团"
                 "com.taobao.taobao" -> "淘宝"
+                "com.xunmeng.pinduoduo" -> "拼多多"
+                "com.ss.android.ugc.aweme" -> "抖音"
+                "me.ele" -> "饿了么"
+                "com.sdu.did.psnger" -> "滴滴"
+                "cmb.pb" -> "招商银行"
+                "com.icbc" -> "工商银行"
+                "com.chinamworld.boc" -> "中国银行"
+                "com.android.bankabc" -> "农业银行"
                 else -> "Other"
             }
 
@@ -170,6 +197,17 @@ class AccessibilityMonitorService : AccessibilityService() {
         return when (packageName) {
             "com.tencent.mm" -> "微信支付"
             "com.eg.android.AlipayGphone" -> "支付宝支付"
+            "com.xunmeng.pinduoduo" -> "拼多多支付"
+            "com.ss.android.ugc.aweme" -> "抖音支付"
+            "com.taobao.taobao" -> "淘宝支付"
+            "com.jingdong.app.mall" -> "京东支付"
+            "com.sankuai.meituan" -> "美团支付"
+            "me.ele" -> "饿了么外卖"
+            "com.sdu.did.psnger" -> "滴滴出行"
+            "cmb.pb" -> "招商银行"
+            "com.icbc" -> "工商银行"
+            "com.chinamworld.boc" -> "中国银行"
+            "com.android.bankabc" -> "农业银行"
             else -> "未命名账单"
         }
     }

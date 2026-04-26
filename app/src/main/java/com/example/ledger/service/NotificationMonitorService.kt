@@ -31,14 +31,23 @@ class NotificationMonitorService : NotificationListenerService() {
             "付款成功", "交易成功", "消费成功", "转账成功", "扫码付款",
             "支付完成", "付款完成", "支付款项", "支出通知", "交易人民币",
             "微信支付", "支付凭证", "转账给", "已收钱", "收款到账",
-            "订单支付", "实付款"
+            "订单支付", "实付款",
+            // 微信红包/转账
+            "红包已发送", "已领取", "红包记录", "发出红包", "已被领取",
+            "对方已收钱", "已转账", "转账通知",
+            // 银行消费
+            "消费支出", "支出提醒", "交易提醒", "消费提醒",
+            "快捷支付", "银联支付", "网上银行", "支出人民币", "消费人民币"
         )
 
         // 最新金额匹配规则
         private val PATTERNS = listOf(
             Regex("""(?:¥|￥|人民币|-|支付成功|付款成功|消费)\s*([0-9,]+\.\d{2})"""),
-            Regex("""(?:支出|消费|支付|交易|付款金额|实付款)\s*([0-9,]+\.\d{2})\s*[元]?"""),
+            Regex("""(?:支出|消费|支付|交易|付款金额|实付款|红包金额|转账金额)\s*([0-9,]+\.\d{2})\s*[元]?"""),
             Regex("""(?:金额|付款|付款给)(?:[：:]?)\s*([0-9,]+\.\d{2})"""),
+            Regex("""(?:支出人民币|消费人民币|付款)\s*[¥￥]?\s*([0-9,]+\.\d{2})"""),
+            // 银行短信: 尾号1234卡...人民币500.00
+            Regex("""尾号\d{4}.*?([0-9,]+\.\d{2})"""),
             Regex("""([0-9,]+\.\d{2})\s*元"""),
             // 保底提取
             Regex("""(?<!\d-|-)(?<=\s|^)([0-9,]+\.\d{2})(?=\s|$)""")
@@ -78,10 +87,17 @@ class NotificationMonitorService : NotificationListenerService() {
             "com.taobao.taobao",
             "com.xunmeng.pinduoduo",
             "com.ss.android.ugc.aweme",
+            "me.ele",
+            "com.sdu.did.psnger",
+            "cmb.pb",
+            "com.icbc",
+            "com.chinamworld.boc",
+            "com.android.bankabc",
             "com.android.mms",
             "com.google.android.apps.messaging",
             "com.android.messaging" -> true
-            else -> packageName.contains("bank", ignoreCase = true)
+            else -> packageName.contains("bank", ignoreCase = true) ||
+                    packageName.contains("ccb", ignoreCase = true)
         }
 
         if (!isPaymentApp) return
@@ -103,8 +119,11 @@ class NotificationMonitorService : NotificationListenerService() {
                 val finalAmount = amount ?: return@launch
                 val now = sbn.postTime
 
+                // 先提取商户名，再去做重（商户名参与指纹）
+                val merchantName = extractMerchantName(combinedContent, packageName, title)
+
                 // 全局去重
-                if (!BillDeduplicator.shouldRecordBill(finalAmount, packageName, now)) {
+                if (!BillDeduplicator.shouldRecordBill(finalAmount, packageName, merchantName, now)) {
                     return@launch
                 }
 
@@ -117,12 +136,15 @@ class NotificationMonitorService : NotificationListenerService() {
                     "com.taobao.taobao" -> "淘宝"
                     "com.xunmeng.pinduoduo" -> "拼多多"
                     "com.ss.android.ugc.aweme" -> "抖音"
+                    "me.ele" -> "饿了么"
+                    "com.sdu.did.psnger" -> "滴滴"
+                    "cmb.pb" -> "招商银行"
+                    "com.icbc" -> "工商银行"
+                    "com.chinamworld.boc" -> "中国银行"
+                    "com.android.bankabc" -> "农业银行"
                     "com.android.mms", "com.google.android.apps.messaging", "com.android.messaging" -> "SMS (短信)"
                     else -> "Bank App (银行)"
                 }
-
-                // 提取商户名
-                val merchantName = extractMerchantName(combinedContent, packageName, title)
 
                 db.autoBillDao().insertAutoBill(
                     AutoBill(
@@ -148,6 +170,7 @@ class NotificationMonitorService : NotificationListenerService() {
             "com.tencent.mm" -> {
                 Regex("""收款方(?:：|:)?(.*?)(?:\s|$)""").find(content)?.groupValues?.get(1)?.trim()
                     ?: Regex("""付款给(.*?)(?:\s|$)""").find(content)?.groupValues?.get(1)?.trim()
+                    ?: Regex("""来自(.+?)的""").find(content)?.groupValues?.get(1)?.trim()
                     ?: if (title.isNotBlank() && title !in listOf("微信支付", "支付结果通知", "服务通知")) title.trim() else "微信支付"
             }
             "com.eg.android.AlipayGphone" -> {
@@ -155,8 +178,18 @@ class NotificationMonitorService : NotificationListenerService() {
                     ?: Regex("""在(.*?)支付成功""").find(content)?.groupValues?.get(1)?.trim()
                     ?: "支付宝支付"
             }
-            else -> title.takeIf { it.isNotBlank() } ?: "未命名账单"
-        }.replace("交易成功", "").replace("支付成功", "").trim()
+            "com.xunmeng.pinduoduo" -> "拼多多"
+            "com.ss.android.ugc.aweme" -> "抖音"
+            "me.ele" -> "饿了么"
+            "com.sdu.did.psnger" -> "滴滴出行"
+            // 银行 SMS: 尝试提取「在XXX消费」
+            else -> {
+                Regex("""在(.+?)消费""").find(content)?.groupValues?.get(1)?.trim()
+                    ?: Regex("""(.+?)支出""").find(content)?.groupValues?.get(1)?.trim()
+                    ?: title.takeIf { it.isNotBlank() }
+                    ?: "未命名账单"
+            }
+        }.replace("交易成功", "").replace("支付成功", "").replace("消费人民币", "").trim()
     }
 
     override fun onListenerDisconnected() {

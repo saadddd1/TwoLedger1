@@ -67,6 +67,16 @@ class ItemViewModel(private val db: AppDatabase) : ViewModel() {
         }
     }
 
+    fun updateBillDetails(bill: AutoBill, merchantName: String, amount: Double, timestamp: Long) {
+        viewModelScope.launch {
+            autoBillDao.updateAutoBill(bill.copy(
+                merchantName = merchantName,
+                amount = amount,
+                timestampMillis = timestamp
+            ))
+        }
+    }
+
     fun convertBillToItem(bill: AutoBill, itemName: String, residual: Double) {
         viewModelScope.launch {
             autoBillDao.updateAutoBill(bill.copy(isProcessed = true))
