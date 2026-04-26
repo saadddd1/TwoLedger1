@@ -36,7 +36,7 @@ fun LoginScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("登录 / 注册", fontWeight = FontWeight.SemiBold) },
+                title = { Text("登录", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(imageVector = Icons.Outlined.Close, contentDescription = "关闭")
@@ -58,15 +58,15 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "保护你的财务数据",
+                "把账本搬上云端",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = IosTextPrimary,
                 modifier = Modifier.padding(top = 40.dp, bottom = 8.dp)
             )
-            
+
             Text(
-                "开启云同步，数据永不丢失",
+                "换手机、删软件，账都不会丢",
                 fontSize = 14.sp,
                 color = IosTextSecondary,
                 modifier = Modifier.padding(bottom = 40.dp)
@@ -107,7 +107,7 @@ fun LoginScreen(
             Button(
                 onClick = {
                     if (phone.isEmpty() || code.isEmpty()) {
-                        showMessage = "请输入手机号和验证码"
+                        showMessage = "手机号和验证码总得填吧"
                         return@Button
                     }
                     scope.launch {
@@ -124,7 +124,7 @@ fun LoginScreen(
                             showMessage = "登录成功"
                             onNavigateBack() // 返回主界面
                         } catch (e: Exception) {
-                            showMessage = "登录失败: 网络错误或后端未启动"
+                            showMessage = "连不上服务器，后端跑起来了吗？"
                             e.printStackTrace()
                         } finally {
                             isLoading = false
@@ -140,7 +140,7 @@ fun LoginScreen(
                 if (isLoading) {
                     CircularProgressIndicator(color = IosBg, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("获取验证码 / 登录", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("登录", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -152,7 +152,7 @@ fun LoginScreen(
                 color = IosBlue,
                 fontSize = 14.sp,
                 modifier = Modifier.clickable {
-                    showMessage = "正在调起微信..."
+                    showMessage = "正在跳转微信..."
                     // 模拟微信登录
                     scope.launch {
                         kotlinx.coroutines.delay(1000)

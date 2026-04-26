@@ -121,7 +121,7 @@ fun MainScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (!isGranted) {
-            android.widget.Toast.makeText(context, "请在设置中开启通知权限以接收流水弹窗", android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(context, "通知权限没开，我帮你跳到设置页了", android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
@@ -186,7 +186,7 @@ fun MainScreen(
                     contentColor = IosBlue,
                     divider = { Divider(color = IosDivider, thickness = 0.5.dp) }
                 ) {
-                    val tabs = listOf("物品列表", "自动记账", "统计概览")
+                    val tabs = listOf("我的家当", "自动记账", "算总账")
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = pagerState.currentPage == index,
@@ -341,7 +341,7 @@ fun AutoRecordContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "需开启通知读取权限以自动记录主流平台账单",
+                        text = "打开通知读取，我就能在你付完钱的瞬间抓到账单",
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 15.sp,
                         color = IosTextSecondary,
@@ -350,7 +350,7 @@ fun AutoRecordContent(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
-                        onClick = { 
+                        onClick = {
                             val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                             context.startActivity(intent)
                         },
@@ -358,7 +358,7 @@ fun AutoRecordContent(
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                     ) {
-                        Text("前往系统设置激活", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold)
+                        Text("去打开", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -385,7 +385,7 @@ fun AutoRecordContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "⚠️ 微信8.5以上版本必须开启此权限\n无障碍服务是目前唯一可以自动捕获微信支付宝账单的方式",
+                        text = "微信/支付宝付完钱的瞬间，我就能抓到账单。\n说的就是无障碍服务，打开就行。",
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 15.sp,
                         color = IosTextSecondary,
@@ -403,7 +403,7 @@ fun AutoRecordContent(
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                     ) {
-                        Text("前往开启无障碍服务", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold)
+                        Text("去开启", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -411,7 +411,7 @@ fun AutoRecordContent(
 
         if (pendingBills.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("暂无捕获到的新账单", color = IosTextSecondary, fontFamily = FontFamily.SansSerif)
+                Text("暂无新账单，看来今天还没花钱", color = IosTextSecondary, fontFamily = FontFamily.SansSerif)
             }
         } else {
             LazyColumn(
@@ -470,27 +470,27 @@ fun AutoBillCard(bill: AutoBill, onDismiss: () -> Unit, onConvert: () -> Unit, o
                     ) {
                         if (!bill.paymentMethod.isNullOrBlank()) {
                             DropdownMenuItem(
-                                text = { Text("付款方式：${bill.paymentMethod}", fontFamily = FontFamily.SansSerif, color = IosTextSecondary, fontSize = 13.sp) },
+                                text = { Text("怎么付的：${bill.paymentMethod}", fontFamily = FontFamily.SansSerif, color = IosTextSecondary, fontSize = 13.sp) },
                                 onClick = { expanded = false }
                             )
                         }
                         if (!bill.fullPayeeName.isNullOrBlank()) {
                             DropdownMenuItem(
-                                text = { Text("收款方全称：${bill.fullPayeeName}", fontFamily = FontFamily.SansSerif, color = IosTextSecondary, fontSize = 13.sp) },
+                                text = { Text("钱给了谁：${bill.fullPayeeName}", fontFamily = FontFamily.SansSerif, color = IosTextSecondary, fontSize = 13.sp) },
                                 onClick = { expanded = false }
                             )
                             Divider(color = IosDivider, thickness = 0.5.dp)
                         } else if (!bill.paymentMethod.isNullOrBlank()) {
                             Divider(color = IosDivider, thickness = 0.5.dp)
                         }
-                        
+
                         DropdownMenuItem(
-                            text = { Text("编辑账单", fontFamily = FontFamily.SansSerif, color = IosBlue) },
+                            text = { Text("改一下", fontFamily = FontFamily.SansSerif, color = IosBlue) },
                             onClick = { expanded = false; onEdit() },
                             leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = "编辑", tint = IosBlue) }
                         )
                         DropdownMenuItem(
-                            text = { Text("忽略此流水", fontFamily = FontFamily.SansSerif, color = IosRed) },
+                            text = { Text("不是我的账", fontFamily = FontFamily.SansSerif, color = IosRed) },
                             onClick = { expanded = false; onDismiss() },
                             leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = "忽略", tint = IosRed) }
                         )
@@ -501,7 +501,7 @@ fun AutoBillCard(bill: AutoBill, onDismiss: () -> Unit, onConvert: () -> Unit, o
             Column {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "来源: ${bill.appSource}",
+                        text = "渠道: ${bill.appSource}",
                         fontFamily = FontFamily.SansSerif,
                         fontSize = 14.sp,
                         color = IosTextSecondary
@@ -531,7 +531,7 @@ fun AutoBillCard(bill: AutoBill, onDismiss: () -> Unit, onConvert: () -> Unit, o
                 ) {
                     Icon(Icons.Outlined.Check, contentDescription = "导入", modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("转为资产", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold)
+                    Text("计入家当", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -549,23 +549,23 @@ fun ConvertBillDialog(bill: AutoBill, onDismiss: () -> Unit, onConvert: (String,
         onDismissRequest = onDismiss,
         containerColor = IosBg,
         shape = RoundedCornerShape(14.dp),
-        title = { 
+        title = {
             Text(
-                "将自动记账转化为资产", 
-                fontFamily = FontFamily.SansSerif, 
+                "这笔钱买了什么？",
+                fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.SemiBold,
                 color = IosTextPrimary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
-            ) 
+            )
         },
         text = {
             Column {
-                Text("从 ${bill.appSource} 消费 ¥${bill.amount}", color = IosTextSecondary, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
+                Text("在 ${bill.appSource} 花了 ¥${bill.amount}", color = IosTextSecondary, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("物品真实名称", fontFamily = FontFamily.SansSerif) },
+                    label = { Text("给它起个名", fontFamily = FontFamily.SansSerif) },
                     singleLine = true,
                     isError = isError && name.isBlank(),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
@@ -582,11 +582,11 @@ fun ConvertBillDialog(bill: AutoBill, onDismiss: () -> Unit, onConvert: (String,
                     }
                 }
             ) {
-                Text("确定添加", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif)
+                Text("记下了", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消", color = IosBlue, fontFamily = FontFamily.SansSerif) }
+            TextButton(onClick = onDismiss) { Text("算了", color = IosBlue, fontFamily = FontFamily.SansSerif) }
         }
     )
 }
@@ -604,7 +604,7 @@ fun EditBillDialog(bill: AutoBill, onDismiss: () -> Unit, onEdit: (String, Doubl
         shape = RoundedCornerShape(14.dp),
         title = {
             Text(
-                "编辑账单信息",
+                "改一下账单",
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.SemiBold,
                 color = IosTextPrimary,
@@ -614,11 +614,11 @@ fun EditBillDialog(bill: AutoBill, onDismiss: () -> Unit, onEdit: (String, Doubl
         },
         text = {
             Column {
-                Text("来源: ${bill.appSource}", color = IosTextSecondary, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
+                Text("渠道: ${bill.appSource}", color = IosTextSecondary, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
                 OutlinedTextField(
                     value = merchantName,
                     onValueChange = { merchantName = it },
-                    label = { Text("商户名称", fontFamily = FontFamily.SansSerif) },
+                    label = { Text("在哪儿花的", fontFamily = FontFamily.SansSerif) },
                     singleLine = true,
                     isError = isError && merchantName.isBlank(),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
@@ -626,7 +626,7 @@ fun EditBillDialog(bill: AutoBill, onDismiss: () -> Unit, onEdit: (String, Doubl
                 OutlinedTextField(
                     value = amountStr,
                     onValueChange = { amountStr = it },
-                    label = { Text("金额 (¥)", fontFamily = FontFamily.SansSerif) },
+                    label = { Text("花了多少 (¥)", fontFamily = FontFamily.SansSerif) },
                     singleLine = true,
                     isError = isError && (amountStr.toDoubleOrNull() ?: 0.0) <= 0,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
@@ -634,7 +634,7 @@ fun EditBillDialog(bill: AutoBill, onDismiss: () -> Unit, onEdit: (String, Doubl
                 OutlinedTextField(
                     value = dateStr,
                     onValueChange = { dateStr = it },
-                    label = { Text("时间 (MM-dd HH:mm)", fontFamily = FontFamily.SansSerif) },
+                    label = { Text("什么时候 (MM-dd HH:mm)", fontFamily = FontFamily.SansSerif) },
                     singleLine = true,
                     isError = isError && runCatching { dateFormatMDHM.parse(dateStr) }.isFailure,
                     modifier = Modifier.fillMaxWidth()
@@ -653,11 +653,11 @@ fun EditBillDialog(bill: AutoBill, onDismiss: () -> Unit, onEdit: (String, Doubl
                     }
                 }
             ) {
-                Text("保存", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif)
+                Text("改好了", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消", color = IosBlue, fontFamily = FontFamily.SansSerif) }
+            TextButton(onClick = onDismiss) { Text("算了", color = IosBlue, fontFamily = FontFamily.SansSerif) }
         }
     )
 }
@@ -677,7 +677,7 @@ fun ItemListContent(
 ) {
     if (items.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("还没有录入任何物品", color = IosTextSecondary, fontFamily = FontFamily.SansSerif)
+            Text("空空如也 — 连一件吃灰的家当都没有？", color = IosTextSecondary, fontFamily = FontFamily.SansSerif)
         }
     } else {
         LazyColumn(
@@ -737,7 +737,7 @@ fun OverviewContent(items: List<Item>, allBills: List<AutoBill>, modifier: Modif
 
         val recentDays = mutableListOf<Pair<String, Double>>()
         val todayKey = dailyFormat.format(nowMillis)
-        recentDays.add(Pair("今日新增记账", dailySums[todayKey] ?: 0.0))
+        recentDays.add(Pair("今天又败了多少", dailySums[todayKey] ?: 0.0))
         dailySums.keys.filter { it != todayKey }.sortedDescending().forEach { key ->
             val date = dailyFormat.parse(key)
             val label = date?.let { dayLabelFormat.format(it) } ?: key
@@ -746,7 +746,7 @@ fun OverviewContent(items: List<Item>, allBills: List<AutoBill>, modifier: Modif
 
         val recentMonths = mutableListOf<Pair<String, Double>>()
         val thisMonthKey = monthFormat.format(nowMillis)
-        recentMonths.add(Pair("本月累计支出", monthlySums[thisMonthKey] ?: 0.0))
+        recentMonths.add(Pair("这个月已经烧了", monthlySums[thisMonthKey] ?: 0.0))
         monthlySums.keys.filter { it != thisMonthKey }.sortedDescending().forEach { key ->
             val date = monthFormat.parse(key)
             val label = date?.let { monthLabelFormat.format(it) } ?: key
@@ -755,7 +755,7 @@ fun OverviewContent(items: List<Item>, allBills: List<AutoBill>, modifier: Modif
 
         val recentYears = mutableListOf<Pair<String, Double>>()
         val thisYearKey = yearFormat.format(nowMillis)
-        recentYears.add(Pair("本年度总花销", yearlySums[thisYearKey] ?: 0.0))
+        recentYears.add(Pair("今年累计败掉", yearlySums[thisYearKey] ?: 0.0))
         yearlySums.keys.filter { it != thisYearKey }.sortedDescending().forEach { key ->
             recentYears.add(Pair("${key}年", yearlySums[key] ?: 0.0))
         }
@@ -778,31 +778,31 @@ fun OverviewContent(items: List<Item>, allBills: List<AutoBill>, modifier: Modif
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            StandardOverviewCard("资产总账簿") {
-                OverviewRow("总计投入金额", "¥${String.format("%.2f", totalSpent)}", IosTextPrimary, 18.sp)
+            StandardOverviewCard("家当总账") {
+                OverviewRow("这些年败掉的总数", "¥${String.format("%.2f", totalSpent)}", IosTextPrimary, 18.sp)
                 Spacer(modifier = Modifier.height(16.dp))
-                OverviewRow("已变现回血", "¥${String.format("%.2f", totalRecovered)}", IosBlue, 18.sp)
+                OverviewRow("在咸鱼上回的血", "¥${String.format("%.2f", totalRecovered)}", IosBlue, 18.sp)
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider(color = IosDivider, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
-                OverviewRow("实际净消耗", "¥${String.format("%.2f", netSpend)}", IosRed, 26.sp, true)
+                OverviewRow("真正烧掉的钱", "¥${String.format("%.2f", netSpend)}", IosRed, 26.sp, true)
                 Spacer(modifier = Modifier.height(16.dp))
-                OverviewRow("整体日均折旧金", "¥${String.format("%.2f", totalDailyCost)}", IosTextPrimary, 16.sp)
+                OverviewRow("每天一睁眼就亏掉", "¥${String.format("%.2f", totalDailyCost)}", IosTextPrimary, 16.sp)
             }
         }
 
         item {
-            StandardOverviewCard("设备库存状态") {
-                OverviewRow("在役吃灰中", "$activeItems 件", IosTextPrimary, 18.sp)
+            StandardOverviewCard("家当现状") {
+                OverviewRow("还在吃灰的", "$activeItems 件", IosTextPrimary, 18.sp)
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider(color = IosDivider, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
-                OverviewRow("已结清完美脱手", "$soldItems 件", IosBlue, 18.sp)
+                OverviewRow("成功脱手的", "$soldItems 件", IosBlue, 18.sp)
             }
         }
 
         item {
-            StandardOverviewCard("日常流水大盘") {
+            StandardOverviewCard("花钱流水") {
                 ExpandableOverviewRow(
                     historyData = recentDays,
                     valueColor = IosTextPrimary, 
@@ -892,10 +892,10 @@ fun ExpandableOverviewRow(
                 val pastData = historyData.drop(1)
                 if (pastData.isEmpty()) {
                     Text(
-                        text = "暂无更早记录", 
-                        color = IosTextSecondary, 
-                        fontSize = 13.sp, 
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), 
+                        text = "还没有更早的记录",
+                        color = IosTextSecondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                         textAlign = TextAlign.Center
                     )
                 } else {
@@ -1020,7 +1020,7 @@ fun ItemCard(item: Item, onDelete: () -> Unit, onEdit: () -> Unit, onSell: () ->
                     if (item.isSold) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(color = Color(0xFFF2F2F7).copy(alpha = alphaFactor), shape = RoundedCornerShape(6.dp)) {
-                            Text("已结清", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontFamily = FontFamily.SansSerif, fontSize = 11.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
+                            Text("已脱手", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontFamily = FontFamily.SansSerif, fontSize = 11.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
                         }
                     }
                 }
@@ -1035,12 +1035,12 @@ fun ItemCard(item: Item, onDelete: () -> Unit, onEdit: () -> Unit, onSell: () ->
                         modifier = Modifier.background(IosCardBg)
                     ) {
                         DropdownMenuItem(
-                            text = { Text("编辑", fontFamily = FontFamily.SansSerif) },
+                            text = { Text("改一下", fontFamily = FontFamily.SansSerif) },
                             onClick = { expanded = false; onEdit() },
                             leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = "编辑", tint = IosBlue) }
                         )
                         DropdownMenuItem(
-                            text = { Text("删除", fontFamily = FontFamily.SansSerif, color = IosRed) },
+                            text = { Text("不要了", fontFamily = FontFamily.SansSerif, color = IosRed) },
                             onClick = { expanded = false; onDelete() },
                             leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = "删除", tint = IosRed) }
                         )
@@ -1050,15 +1050,15 @@ fun ItemCard(item: Item, onDelete: () -> Unit, onEdit: () -> Unit, onSell: () ->
             
             Column {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("总价: ¥${String.format("%.2f", item.price)}", fontFamily = FontFamily.SansSerif, fontSize = 15.sp, color = IosTextPrimary.copy(alpha = alphaFactor))
-                    Text("购买: $dateStr", fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
+                    Text("入手价: ¥${String.format("%.2f", item.price)}", fontFamily = FontFamily.SansSerif, fontSize = 15.sp, color = IosTextPrimary.copy(alpha = alphaFactor))
+                    Text("入手日: $dateStr", fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
                 }
                 if (item.isSold) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("卖出回血: ¥${String.format("%.2f", item.residualValue)}", fontFamily = FontFamily.SansSerif, fontSize = 15.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
+                        Text("回血了: ¥${String.format("%.2f", item.residualValue)}", fontFamily = FontFamily.SansSerif, fontSize = 15.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
                         if (soldDateStr != null) {
-                            Text("结清: $soldDateStr", fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
+                            Text("脱手日: $soldDateStr", fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
                         }
                     }
                 }
@@ -1066,17 +1066,17 @@ fun ItemCard(item: Item, onDelete: () -> Unit, onEdit: () -> Unit, onSell: () ->
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                 Column {
-                    Text("共计使用: $daysPassed 天", fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
+                    Text("陪伴了你 $daysPassed 天", fontFamily = FontFamily.SansSerif, fontSize = 14.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
                     if (!item.isSold) {
                         TextButton(onClick = onSell, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(30.dp)) {
-                            Text("二手残值", color = IosBlue, fontFamily = FontFamily.SansSerif, fontSize = 14.sp)
+                            Text("挂了咸鱼没？", color = IosBlue, fontFamily = FontFamily.SansSerif, fontSize = 14.sp)
                         }
                     } else {
                         Spacer(modifier = Modifier.height(30.dp))
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("日均成本", fontFamily = FontFamily.SansSerif, fontSize = 12.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
+                    Text("每天烧你", fontFamily = FontFamily.SansSerif, fontSize = 12.sp, color = IosTextSecondary.copy(alpha = alphaFactor))
                     Text(
                         "¥${String.format("%.2f", dailyCost)}",
                         fontFamily = FontFamily.SansSerif, fontSize = 28.sp,
@@ -1101,12 +1101,12 @@ fun AddItemDialog(onDismiss: () -> Unit, onAdd: (String, Double, Long, Double) -
         onDismissRequest = onDismiss,
         containerColor = IosBg,
         shape = RoundedCornerShape(14.dp),
-        title = { Text("添加新物品", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, color = IosTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = { Text("录入新家当", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, color = IosTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
         text = {
             Column {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("物品名称", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && name.isBlank(), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
-                OutlinedTextField(value = priceStr, onValueChange = { priceStr = it }, label = { Text("入手总价 (￥)", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && (priceStr.toDoubleOrNull() ?: 0.0) <= 0, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
-                OutlinedTextField(value = dateStr, onValueChange = { dateStr = it }, label = { Text("购买日期 (YYYY-MM-DD)", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && runCatching { dateFormatYMD.parse(dateStr) }.isFailure, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("给它起个名", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && name.isBlank(), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
+                OutlinedTextField(value = priceStr, onValueChange = { priceStr = it }, label = { Text("花了多少钱", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && (priceStr.toDoubleOrNull() ?: 0.0) <= 0, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
+                OutlinedTextField(value = dateStr, onValueChange = { dateStr = it }, label = { Text("什么时候败的", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && runCatching { dateFormatYMD.parse(dateStr) }.isFailure, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -1114,9 +1114,9 @@ fun AddItemDialog(onDismiss: () -> Unit, onAdd: (String, Double, Long, Double) -
                 val price = priceStr.toDoubleOrNull() ?: 0.0
                 val dateMillis = try { dateFormatYMD.parse(dateStr)?.time ?: 0L } catch (e: Exception) { 0L }
                 if (name.isNotBlank() && price > 0 && dateMillis > 0) onAdd(name, price, dateMillis, 0.0) else isError = true
-            }) { Text("保存", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif) }
+            }) { Text("记下了", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消", color = IosBlue, fontFamily = FontFamily.SansSerif) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("算了", color = IosBlue, fontFamily = FontFamily.SansSerif) } }
     )
 }
 
@@ -1131,12 +1131,12 @@ fun EditItemDialog(item: Item, onDismiss: () -> Unit, onEdit: (String, Double, L
         onDismissRequest = onDismiss,
         containerColor = IosBg,
         shape = RoundedCornerShape(14.dp),
-        title = { Text("编辑物品信息", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, color = IosTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = { Text("改一下信息", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, color = IosTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
         text = {
             Column {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("物品名称", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && name.isBlank(), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
-                OutlinedTextField(value = priceStr, onValueChange = { priceStr = it }, label = { Text("入手总价 (￥)", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && (priceStr.toDoubleOrNull() ?: 0.0) <= 0, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
-                OutlinedTextField(value = dateStr, onValueChange = { dateStr = it }, label = { Text("购买日期 (YYYY-MM-DD)", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && runCatching { dateFormatYMD.parse(dateStr) }.isFailure, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("叫什么", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && name.isBlank(), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
+                OutlinedTextField(value = priceStr, onValueChange = { priceStr = it }, label = { Text("花了多少钱", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && (priceStr.toDoubleOrNull() ?: 0.0) <= 0, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
+                OutlinedTextField(value = dateStr, onValueChange = { dateStr = it }, label = { Text("什么时候败的", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && runCatching { dateFormatYMD.parse(dateStr) }.isFailure, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -1144,9 +1144,9 @@ fun EditItemDialog(item: Item, onDismiss: () -> Unit, onEdit: (String, Double, L
                 val price = priceStr.toDoubleOrNull() ?: 0.0
                 val dateMillis = try { dateFormatYMD.parse(dateStr)?.time ?: 0L } catch (e: Exception) { 0L }
                 if (name.isNotBlank() && price > 0 && dateMillis > 0) onEdit(name, price, dateMillis) else isError = true
-            }) { Text("保存更改", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif) }
+            }) { Text("改好了", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消", color = IosBlue, fontFamily = FontFamily.SansSerif) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("算了", color = IosBlue, fontFamily = FontFamily.SansSerif) } }
     )
 }
 
@@ -1160,12 +1160,12 @@ fun SellItemDialog(item: Item, onDismiss: () -> Unit, onSell: (Double, Long) -> 
         onDismissRequest = onDismiss,
         containerColor = IosBg,
         shape = RoundedCornerShape(14.dp),
-        title = { Text("登记售出", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, color = IosTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = { Text("终于卖了？", fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, color = IosTextPrimary, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
         text = {
             Column {
-                Text("核算【${item.name}】的真实最终净成本。", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, color = IosTextSecondary, modifier = Modifier.padding(bottom = 12.dp), textAlign = TextAlign.Center)
-                OutlinedTextField(value = priceStr, onValueChange = { priceStr = it }, label = { Text("回血/卖出金额 (￥)", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && priceStr.isBlank(), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
-                OutlinedTextField(value = dateStr, onValueChange = { dateStr = it }, label = { Text("结清日期 (YYYY-MM-DD)", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && runCatching { dateFormatYMD.parse(dateStr) }.isFailure, modifier = Modifier.fillMaxWidth())
+                Text("来算算【${item.name}】到底亏了你多少钱。", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, color = IosTextSecondary, modifier = Modifier.padding(bottom = 12.dp), textAlign = TextAlign.Center)
+                OutlinedTextField(value = priceStr, onValueChange = { priceStr = it }, label = { Text("卖了多少钱", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && priceStr.isBlank(), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
+                OutlinedTextField(value = dateStr, onValueChange = { dateStr = it }, label = { Text("哪天出手的", fontFamily = FontFamily.SansSerif) }, singleLine = true, isError = isError && runCatching { dateFormatYMD.parse(dateStr) }.isFailure, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -1173,8 +1173,8 @@ fun SellItemDialog(item: Item, onDismiss: () -> Unit, onSell: (Double, Long) -> 
                 val price = priceStr.toDoubleOrNull() ?: 0.0
                 val dateMillis = try { dateFormatYMD.parse(dateStr)?.time ?: 0L } catch (e: Exception) { 0L }
                 if (dateMillis > 0) onSell(price, dateMillis) else isError = true
-            }) { Text("确认核算", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif) }
+            }) { Text("面对现实", color = IosBlue, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.SansSerif) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消", color = IosBlue, fontFamily = FontFamily.SansSerif) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("算了", color = IosBlue, fontFamily = FontFamily.SansSerif) } }
     )
 }

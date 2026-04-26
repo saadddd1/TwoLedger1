@@ -59,14 +59,14 @@ fun VipScreen(onNavigateBack: () -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     Text(
-                        if (isVip) "尊贵的 VIP 会员" else "未开通 VIP",
+                        if (isVip) "你已经是我们的人了" else "还未开通 VIP",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFFD700) // Gold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        if (isVip) "您的数据正在云端安全同步" else "开通获取云同步与无限账单容量特权",
+                        if (isVip) "数据正在云端安全同步中" else "开通后数据云同步，换手机也不怕",
                         fontSize = 14.sp,
                         color = Color.White.copy(alpha = 0.8f)
                     )
@@ -74,7 +74,7 @@ fun VipScreen(onNavigateBack: () -> Unit) {
             }
 
             Text(
-                "选择您的订阅方案",
+                "选一个套餐",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = IosTextPrimary,
@@ -85,7 +85,7 @@ fun VipScreen(onNavigateBack: () -> Unit) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 PlanCard(
                     modifier = Modifier.weight(1f).padding(end = 8.dp),
-                    title = "连续包月",
+                    title = "包月",
                     price = "¥ 6.00",
                     period = "/ 月",
                     isSelected = selectedPlan == 1,
@@ -121,7 +121,7 @@ fun VipScreen(onNavigateBack: () -> Unit) {
                 if (isLoading) {
                     CircularProgressIndicator(color = IosBg, modifier = Modifier.size(24.dp))
                 } else {
-                    Text(if (isVip) "已开通" else "立即开通 / 续费", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(if (isVip) "已开通" else "立即开通", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }
