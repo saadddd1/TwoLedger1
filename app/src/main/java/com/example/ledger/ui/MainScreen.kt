@@ -77,6 +77,31 @@ val IosTextSecondary = Color(0xFF8E8E93)
 val IosDivider = Color(0xFFE5E5EA)
 val IosCardBg = Color(0xFFFFFFFF)
 
+@Composable
+private fun StatusBarProtection(
+    color: Color = IosBg,
+) {
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(
+                with(androidx.compose.ui.platform.LocalDensity.current) {
+                    (androidx.compose.foundation.layout.WindowInsets.statusBars
+                        .getTop(this) * 1.2f).toDp()
+                }
+            )
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(
+                        color.copy(alpha = 1f),
+                        color.copy(alpha = 0.8f),
+                        Color.Transparent
+                    )
+                )
+            )
+    )
+}
+
 fun isNotificationListenerEnabled(context: Context): Boolean {
     val packageName = context.packageName
     val enabledListeners = Settings.Secure.getString(
@@ -205,80 +230,86 @@ fun MainScreen(
             }
         }
     ) { padding ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.padding(padding).fillMaxSize()
-        ) { page ->
-            when (page) {
-                0 -> ItemListContent(
-                        items = items,
-                        onDelete = { viewModel.deleteItem(it) },
-                        onEdit = { itemToEdit = it },
-                        onSell = { itemToSell = it }
-                     )
-                1 -> AutoRecordContent(
-                        pendingBills = pendingBills,
-                        onDismiss = { viewModel.dismissAutoBill(it) },
-                        onConvert = { billToConvert = it },
-                        onEdit = { billToEdit = it },
-                        context = context
-                     )
-                2 -> OverviewContent(items = items, allBills = allBills)
+        Box(modifier = Modifier.fillMaxSize()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            ) { page ->
+                when (page) {
+                    0 -> ItemListContent(
+                            items = items,
+                            onDelete = { viewModel.deleteItem(it) },
+                            onEdit = { itemToEdit = it },
+                            onSell = { itemToSell = it }
+                         )
+                    1 -> AutoRecordContent(
+                            pendingBills = pendingBills,
+                            onDismiss = { viewModel.dismissAutoBill(it) },
+                            onConvert = { billToConvert = it },
+                            onEdit = { billToEdit = it },
+                            context = context
+                         )
+                    2 -> OverviewContent(items = items, allBills = allBills)
+                }
             }
-        }
 
-        if (showAddDialog) {
-            AddItemDialog(
-                onDismiss = { showAddDialog = false },
-                onAdd = { name, price, dateMillis, residual ->
-                    viewModel.addItem(name, price, dateMillis, residual)
-                    showAddDialog = false
-                }
-            )
-        }
+            if (showAddDialog) {
+                AddItemDialog(
+                    onDismiss = { showAddDialog = false },
+                    onAdd = { name, price, dateMillis, residual ->
+                        viewModel.addItem(name, price, dateMillis, residual)
+                        showAddDialog = false
+                    }
+                )
+            }
 
-        if (itemToEdit != null) {
-            EditItemDialog(
-                item = itemToEdit!!,
-                onDismiss = { itemToEdit = null },
-                onEdit = { name, price, dateMillis ->
-                    viewModel.updateItemDetails(itemToEdit!!, name, price, dateMillis)
-                    itemToEdit = null
-                }
-            )
-        }
+            if (itemToEdit != null) {
+                EditItemDialog(
+                    item = itemToEdit!!,
+                    onDismiss = { itemToEdit = null },
+                    onEdit = { name, price, dateMillis ->
+                        viewModel.updateItemDetails(itemToEdit!!, name, price, dateMillis)
+                        itemToEdit = null
+                    }
+                )
+            }
 
-        if (itemToSell != null) {
-            SellItemDialog(
-                item = itemToSell!!,
-                onDismiss = { itemToSell = null },
-                onSell = { soldPrice, soldDateMillis ->
-                    viewModel.sellItem(itemToSell!!, soldPrice, soldDateMillis)
-                    itemToSell = null
-                }
-            )
-        }
-        
-        if (billToConvert != null) {
-            ConvertBillDialog(
-                bill = billToConvert!!,
-                onDismiss = { billToConvert = null },
-                onConvert = { name, residual ->
-                    viewModel.convertBillToItem(billToConvert!!, name, residual)
-                    billToConvert = null
-                }
-            )
-        }
+            if (itemToSell != null) {
+                SellItemDialog(
+                    item = itemToSell!!,
+                    onDismiss = { itemToSell = null },
+                    onSell = { soldPrice, soldDateMillis ->
+                        viewModel.sellItem(itemToSell!!, soldPrice, soldDateMillis)
+                        itemToSell = null
+                    }
+                )
+            }
 
-        if (billToEdit != null) {
-            EditBillDialog(
-                bill = billToEdit!!,
-                onDismiss = { billToEdit = null },
-                onEdit = { merchantName, amount, timestamp ->
-                    viewModel.updateBillDetails(billToEdit!!, merchantName, amount, timestamp)
-                    billToEdit = null
-                }
-            )
+            if (billToConvert != null) {
+                ConvertBillDialog(
+                    bill = billToConvert!!,
+                    onDismiss = { billToConvert = null },
+                    onConvert = { name, residual ->
+                        viewModel.convertBillToItem(billToConvert!!, name, residual)
+                        billToConvert = null
+                    }
+                )
+            }
+
+            if (billToEdit != null) {
+                EditBillDialog(
+                    bill = billToEdit!!,
+                    onDismiss = { billToEdit = null },
+                    onEdit = { merchantName, amount, timestamp ->
+                        viewModel.updateBillDetails(billToEdit!!, merchantName, amount, timestamp)
+                        billToEdit = null
+                    }
+                )
+            }
+
+            StatusBarProtection()
         }
     }
 }
