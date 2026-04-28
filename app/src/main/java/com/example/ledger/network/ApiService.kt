@@ -1,20 +1,42 @@
 package com.example.ledger.network
 
+import com.google.gson.annotations.SerializedName
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.GET
 import retrofit2.http.Header
 
-data class LoginRequest(val phone: String, val code: String)
-data class LoginResponse(val token: String, val userId: String, val isVip: Boolean, val vipExpireAt: Long?)
+data class LoginRequest(
+    @SerializedName("phone") val phone: String,
+    @SerializedName("code") val code: String
+)
+data class LoginResponse(
+    @SerializedName("token") val token: String,
+    @SerializedName("userId") val userId: String,
+    @SerializedName("isVip") val isVip: Boolean,
+    @SerializedName("vipExpireAt") val vipExpireAt: Long?
+)
 
-data class WechatLoginRequest(val code: String)
+data class WechatLoginRequest(
+    @SerializedName("code") val code: String
+)
 
-data class SyncDataRequest(val dataJson: String)
-data class SyncDataResponse(val success: Boolean, val message: String)
+data class SyncDataRequest(
+    @SerializedName("dataJson") val dataJson: String
+)
+data class SyncDataResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String
+)
 
-data class VipPayRequest(val planId: String, val payMethod: String) // payMethod: "alipay" or "wechat"
-data class VipPayResponse(val orderId: String, val payUrl: String)
+data class VipPayRequest(
+    @SerializedName("planId") val planId: String,
+    @SerializedName("payMethod") val payMethod: String
+) // payMethod: "alipay" or "wechat"
+data class VipPayResponse(
+    @SerializedName("orderId") val orderId: String,
+    @SerializedName("payUrl") val payUrl: String
+)
 
 interface ApiService {
     // 1. 手机号登录/注册
