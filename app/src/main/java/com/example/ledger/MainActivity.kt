@@ -27,6 +27,11 @@ import kotlinx.coroutines.delay
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.serialization.Serializable
+
+@Serializable data object MainRoute
+@Serializable data object LoginRoute
+@Serializable data object VipRoute
 
 class MainActivity : ComponentActivity() {
     private val viewModelFactory by lazy {
@@ -72,21 +77,21 @@ class MainActivity : ComponentActivity() {
                         SplashScreen()
                     } else {
                         val navController = rememberNavController()
-                        NavHost(navController = navController, startDestination = "main") {
-                            composable("main") {
+                        NavHost(navController = navController, startDestination = MainRoute) {
+                            composable<MainRoute> {
                                 MainScreen(
                                     viewModelFactory = viewModelFactory,
-                                    onNavigateToLogin = { navController.navigate("login") },
-                                    onNavigateToVip = { navController.navigate("vip") }
+                                    onNavigateToLogin = { navController.navigate(LoginRoute) },
+                                    onNavigateToVip = { navController.navigate(VipRoute) }
                                 )
                             }
-                            composable("login") {
+                            composable<LoginRoute> {
                                 com.example.ledger.ui.LoginScreen(
                                     onNavigateBack = { navController.popBackStack() },
-                                    onNavigateToVip = { navController.navigate("vip") }
+                                    onNavigateToVip = { navController.navigate(VipRoute) }
                                 )
                             }
-                            composable("vip") {
+                            composable<VipRoute> {
                                 com.example.ledger.ui.VipScreen(
                                     onNavigateBack = { navController.popBackStack() }
                                 )
