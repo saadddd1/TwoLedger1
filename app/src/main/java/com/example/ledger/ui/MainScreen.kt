@@ -451,9 +451,7 @@ fun AutoRecordContent(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(pendingBills, key = { it.id }) { bill ->
-                    Box(modifier = Modifier.animateItemPlacement(tween(250))) {
-                        AutoBillCard(bill, onDismiss = { onDismiss(bill) }, onConvert = { onConvert(bill) }, onEdit = { onEdit(bill) })
-                    }
+                    AutoBillCard(bill, onDismiss = { onDismiss(bill) }, onConvert = { onConvert(bill) }, onEdit = { onEdit(bill) })
                 }
             }
         }
@@ -717,14 +715,12 @@ fun ItemListContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(items, key = { it.id }) { item ->
-                Box(modifier = Modifier.animateItemPlacement(tween(250))) {
-                    ItemCard(
-                        item = item, 
-                        onDelete = { onDelete(item.id) },
-                        onEdit = { onEdit(item) },
-                        onSell = { onSell(item) }
-                    )
-                }
+                ItemCard(
+                    item = item,
+                    onDelete = { onDelete(item.id) },
+                    onEdit = { onEdit(item) },
+                    onSell = { onSell(item) }
+                )
             }
         }
     }
